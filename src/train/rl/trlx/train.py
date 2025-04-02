@@ -18,16 +18,19 @@ from trlx.data.configs import (
     TRLConfig,
 )
 from trlx.models.modeling_ppo import PPOConfig
+import os
+os.environ['CUDA_LAUNCH_BLOCKING'] = '1'
 
-model_dir = 'checkpoints/exec-XXXX'  # select the checkpoint from the prompt-based methods
+import textstat
+
+model_dir = '/home/cunhuan/code/controllable-readability-summarization/src/train/mnt/hd3/checkpoints/exec-01000'
 
 config = TRLConfig(
     train=TrainConfig(
         seq_length=1024,
-        epochs=500,
+        epochs=10,
         total_steps=100000,
         batch_size=2,
-        batch_size_eval=2,
         checkpoint_interval=10000,
         eval_interval=500,
         save_optimizer=False,
@@ -91,17 +94,9 @@ config = TRLConfig(
     ),
 )
 
-
-def get_flesch_kincaid(text):
-    r = Readability(text)
-    fk = r.flesch_kincaid()
-    return fk.score
-
-
 def get_flesch(text):
-    r = Readability(text)
-    f = r.flesch()
-    return f.score
+    score = textstat.flesch_reading_ease(text)
+    return score
 
 import random
 
@@ -117,31 +112,26 @@ sigma = 10
 def calc_nd(value, mean):
     return 1 / (sigma * np.sqrt(2 * np.pi)) * np.exp(- (value - mean) ** 2 / (2 * sigma ** 2)) / 0.039894228040143274
 
-
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from transformers import AutoModel, AutoTokenizer
 import os
 model_name = "roberta-large"
-device = "cuda:" + str(os.environ.get('LOCAL_RANK',0))
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 num_layers = 17
-cache_dir=".cache"
-model = AutoModel.from_pretrained(model_name, cache_dir=cache_dir)
+cache_dir = "roberta"
+model = AutoModel.from_pretrained(cache_dir)
 model = model.to(device)
-tokenizer = AutoTokenizer.from_pretrained(model_name, cache_dir=cache_dir)
+tokenizer = AutoTokenizer.from_pretrained(cache_dir)
 model.encoder.layer = torch.nn.ModuleList([layer for layer in model.encoder.layer[:num_layers]])
 
 def encode_text(input_str):
-    """
-    Helper function to encode any string to tensor using the tokenizer
-    """
-    inputs = tokenizer(input_str, padding=True, truncation=True, return_tensors="pt")
+    inputs = tokenizer(input_str, padding='max_length', truncation=True, max_length=512, return_tensors="pt", return_token_type_ids=False)
     inputs = {k: v.to(device) for k, v in inputs.items()}
     with torch.no_grad():
         outputs = model(**inputs)
 
-    # idf
     idf = torch.clone(inputs["attention_mask"]).float()
     idf[idf == tokenizer.sep_token_id] = 0
     idf[idf == tokenizer.cls_token_id] = 0
@@ -150,10 +140,6 @@ def encode_text(input_str):
     return F.normalize(outputs[0], dim=-1), inputs["attention_mask"], idf
 
 def compute_bertscore(doc_embedding, doc_masks, doc_idf, summ_embedding, summ_masks, summ_idf):
-    """
-    Helper function that is modified from the official code (greedy_cos_idf() method) https://github.com/Tiiiger/bert_score/blob/dbcf6db37e8bd6ff68446f06b0ba5d0763b62d20/bert_score/utils.py#L469
-    """
-
     batch_size = doc_embedding.size(0)
     sim = torch.bmm(summ_embedding, doc_embedding.transpose(1, 2))
     masks = torch.bmm(summ_masks.unsqueeze(2).float(), doc_masks.unsqueeze(1).float())
@@ -176,11 +162,8 @@ def compute_bertscore(doc_embedding, doc_masks, doc_idf, summ_embedding, summ_ma
 
     return P
 
-
 if __name__ == "__main__":
-
-    def reward_fn(samples: List[str], prompts: List[str], outputs: List[str]):
-
+    def reward_fn(samples: List[str], prompts: List[str], outputs: List[str], tokenizer=None):
         flesch_scores = []
         original_scores = []
         summaries = []
@@ -199,7 +182,6 @@ if __name__ == "__main__":
 
         all_bertscore_scores = []
         for doc, summary in zip(docs, summaries):
-
             bertscore_input_embedding, bertscore_input_attention_mask, bertscore_input_idf = encode_text([doc])
             bertscore_output_embedding, bertscore_output_attention_mask, bertscore_output_idf = encode_text([summary])
 
@@ -218,7 +200,7 @@ if __name__ == "__main__":
 
         flesch_scores = [calc_nd(fs, o_fs) for fs, o_fs in zip(flesch_scores, original_scores)]
 
-        readability_weight = 1
+        readability_weight = 0.5
         flesch_scores = torch.tensor(flesch_scores)
         all_bertscore_scores = torch.tensor(all_bertscore_scores)
         flesch_scores = readability_weight * flesch_scores + (1 - readability_weight) * all_bertscore_scores
@@ -226,9 +208,8 @@ if __name__ == "__main__":
 
         return flesch_scores
 
-
     train_file = '../../data/train_prompt_score.json'
-    validation_file = '../../data/train_prompt_score.json'
+    validation_file = '../../data/validation_prompt_score.json'
     data_files = {"train": train_file, "validation": validation_file}
     dataset = load_dataset("json", data_files=data_files)
     dataset['train'] = dataset['train'].shuffle(seed=42)
@@ -248,13 +229,10 @@ if __name__ == "__main__":
     prompts = change_scores(prompts)
     assert len(prompts) == len(summaries)
 
-    # make dictionary of prompts and labels to use for reward function
     tokenizer = AutoTokenizer.from_pretrained(config.model.model_path)
     tokenizer.padding_side = "left"
     tokenizer.truncation_side = "right"
     tokenizer.sep_token = "<sep>"
-    prompt_label = {}
-    max_length = config.train.seq_length
 
     trlx.train(
         reward_fn=reward_fn,

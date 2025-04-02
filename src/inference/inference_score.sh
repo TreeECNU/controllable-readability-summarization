@@ -5,11 +5,11 @@ source ~/anaconda3/etc/profile.d/conda.sh
 conda activate readability_summ
 
 VAL_FILE='../data/test_prompt_score.json'
-MODEL_PATH=$1
+MODEL_PATH='../train/rl/trlx/checkpoint-diverse/best_checkpoint/hf_model'
 
 
 OUTPUT_DIR='outputs/1/'
-CUDA_VISIBLE_DEVICES=0 python -u run_summarization.py --model_name_or_path ${MODEL_PATH} \
+CUDA_VISIBLE_DEVICES=6 python -u run_summarization.py --model_name_or_path ${MODEL_PATH} \
  --output_dir ${OUTPUT_DIR} --text_column input_noprompt --summary_column summary \
  --train_file ${VAL_FILE} \
  --validation_file ${VAL_FILE} \
@@ -26,7 +26,7 @@ P1=$!
 
 
 OUTPUT_DIR='outputs/2/'
-CUDA_VISIBLE_DEVICES=1 python -u run_summarization.py --model_name_or_path ${MODEL_PATH} \
+CUDA_VISIBLE_DEVICES=7 python -u run_summarization.py --model_name_or_path ${MODEL_PATH} \
  --output_dir ${OUTPUT_DIR} --text_column input_noprompt --summary_column summary \
  --train_file ${VAL_FILE} \
  --validation_file ${VAL_FILE} \
@@ -41,9 +41,10 @@ CUDA_VISIBLE_DEVICES=1 python -u run_summarization.py --model_name_or_path ${MOD
 
 P2=$!
 
+wait $P1 $P2
 
 OUTPUT_DIR='outputs/3/'
-CUDA_VISIBLE_DEVICES=2 python -u run_summarization.py --model_name_or_path ${MODEL_PATH} \
+CUDA_VISIBLE_DEVICES=6 python -u run_summarization.py --model_name_or_path ${MODEL_PATH} \
  --output_dir ${OUTPUT_DIR} --text_column input_noprompt --summary_column summary \
  --train_file ${VAL_FILE} \
  --validation_file ${VAL_FILE} \
@@ -60,7 +61,7 @@ P3=$!
 
 
 OUTPUT_DIR='outputs/4/'
-CUDA_VISIBLE_DEVICES=3 python -u run_summarization.py --model_name_or_path ${MODEL_PATH} \
+CUDA_VISIBLE_DEVICES=7 python -u run_summarization.py --model_name_or_path ${MODEL_PATH} \
  --output_dir ${OUTPUT_DIR} --text_column input_noprompt --summary_column summary \
  --train_file ${VAL_FILE} \
  --validation_file ${VAL_FILE} \

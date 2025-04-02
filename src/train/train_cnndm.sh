@@ -4,14 +4,14 @@ source ~/anaconda3/etc/profile.d/conda.sh
 
 conda activate readability_summ
 
-FOLDER_OUTPUT=/mnt/hd3/checkpoints/exec-$RANDOM
+FOLDER_OUTPUT=mnt/hd3/checkpoints/exec-$RANDOM
 
-TRAIN_FILE='../data/train_prompt_category.json'
-VAL_FILE='../data/validation_prompt_category.json'
+TRAIN_FILE='data/train_prompt_category_01.json'
+VAL_FILE='data/validation_prompt_category_1.json'
 
-MODEL_NAME='google/flan-t5-large'
+MODEL_NAME='rl/trlx/pretrained_models'
 
-deepspeed --master_port 61002 --include localhost:0,1,2,3,4,5,6,7 run_summarization.py --model_name_or_path ${MODEL_NAME} \
+deepspeed --master_port 61002 --include localhost:0,1 run_summarization.py --model_name_or_path ${MODEL_NAME} \
  --output_dir ${FOLDER_OUTPUT} --text_column input --summary_column summary \
  --train_file ${TRAIN_FILE} \
  --validation_file ${VAL_FILE} \

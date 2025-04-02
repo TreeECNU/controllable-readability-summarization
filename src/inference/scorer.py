@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from transformers import AutoModel, AutoTokenizer
+import textstat
 
 class BERTScoreScorer:
     """
@@ -90,18 +91,9 @@ class BERTScoreScorer:
         
         return P
 
-from readability import Readability
-
-def get_flesch_kincaid(text):
-    r = Readability(text)
-    fk = r.flesch_kincaid()
-    return fk.score
-
-
 def get_flesch(text):
-    r = Readability(text)
-    f = r.flesch()
-    return f.score
+    score = textstat.flesch_reading_ease(text)
+    return score
 
 class FleschScorer:
     """

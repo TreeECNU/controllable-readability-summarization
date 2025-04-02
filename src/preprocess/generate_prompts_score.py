@@ -33,7 +33,7 @@ def get_prompt(flesch_summary):
 
 
 def transform_data(split):
-    data = open_file('../data/' + split + '.json')
+    data = open_file('data/' + split + '.json')
     new_data = []
 
     for entry in tqdm(data):
@@ -51,7 +51,7 @@ def transform_data(split):
         new_data.append(entry)
 
 
-    save_file(new_data, '../data/' + split + '_prompt_score.json')
+    save_file(new_data, 'data/' + split + '_prompt_score.json')
 
 
 transform_data('train')
