@@ -4,13 +4,11 @@ source ~/anaconda3/etc/profile.d/conda.sh
 
 conda activate readability_summ
 
-VAL_FILE='../data/test_prompt_score.json'
-# MODEL_PATH='../train/mnt/hd3/checkpoints/exec-01000'
-MODEL_PATH='../train/rl/trlx/checkpoint-diverse/best_checkpoint/hf_model'
+VAL_FILE='../data/test_prompt_score_20.json'
+MODEL_PATH='../train/mnt/hd3/checkpoints/exec-01000'
 
-
-OUTPUT_DIR='outputs/1/'
-CUDA_VISIBLE_DEVICES=0 python -u run_summarization.py --model_name_or_path ${MODEL_PATH} \
+OUTPUT_DIR='outputs_sft/1/'
+CUDA_VISIBLE_DEVICES=0 python -u run_summarization_sft.py --model_name_or_path ${MODEL_PATH} \
  --output_dir ${OUTPUT_DIR} --text_column input_noprompt --summary_column summary \
  --train_file ${VAL_FILE} \
  --validation_file ${VAL_FILE} \
@@ -26,8 +24,8 @@ CUDA_VISIBLE_DEVICES=0 python -u run_summarization.py --model_name_or_path ${MOD
 P1=$!
 
 
-OUTPUT_DIR='outputs/2/'
-CUDA_VISIBLE_DEVICES=1 python -u run_summarization.py --model_name_or_path ${MODEL_PATH} \
+OUTPUT_DIR='outputs_sft/2/'
+CUDA_VISIBLE_DEVICES=1 python -u run_summarization_sft.py --model_name_or_path ${MODEL_PATH} \
  --output_dir ${OUTPUT_DIR} --text_column input_noprompt --summary_column summary \
  --train_file ${VAL_FILE} \
  --validation_file ${VAL_FILE} \
@@ -44,8 +42,8 @@ P2=$!
 
 wait $P1 $P2
 
-OUTPUT_DIR='outputs/3/'
-CUDA_VISIBLE_DEVICES=0 python -u run_summarization.py --model_name_or_path ${MODEL_PATH} \
+OUTPUT_DIR='outputs_sft/3/'
+CUDA_VISIBLE_DEVICES=0 python -u run_summarization_sft.py --model_name_or_path ${MODEL_PATH} \
  --output_dir ${OUTPUT_DIR} --text_column input_noprompt --summary_column summary \
  --train_file ${VAL_FILE} \
  --validation_file ${VAL_FILE} \
@@ -61,8 +59,8 @@ CUDA_VISIBLE_DEVICES=0 python -u run_summarization.py --model_name_or_path ${MOD
 P3=$!
 
 
-OUTPUT_DIR='outputs/4/'
-CUDA_VISIBLE_DEVICES=1 python -u run_summarization.py --model_name_or_path ${MODEL_PATH} \
+OUTPUT_DIR='outputs_sft/4/'
+CUDA_VISIBLE_DEVICES=1 python -u run_summarization_sft.py --model_name_or_path ${MODEL_PATH} \
  --output_dir ${OUTPUT_DIR} --text_column input_noprompt --summary_column summary \
  --train_file ${VAL_FILE} \
  --validation_file ${VAL_FILE} \

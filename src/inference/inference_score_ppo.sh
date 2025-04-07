@@ -10,7 +10,7 @@ VAL_FILE='../data/test_prompt_score_20.json'
 MODEL_PATH='../train/rl/trlx/checkpoint-diverse/best_checkpoint/hf_model'
 
 # 任务 1：Flesch Kincaid 得分 90
-OUTPUT_DIR='outputs/1/'
+OUTPUT_DIR='outputs_ppo/1/'
 CUDA_VISIBLE_DEVICES=0 python -u run_summarization_ppo.py \
  --ppo_checkpoint ${MODEL_PATH} \
  --output_dir ${OUTPUT_DIR} \
@@ -26,7 +26,7 @@ CUDA_VISIBLE_DEVICES=0 python -u run_summarization_ppo.py \
 P1=$!
 
 # 任务 2：Flesch Kincaid 得分 70
-OUTPUT_DIR='outputs/2/'
+OUTPUT_DIR='outputs_ppo/2/'
 CUDA_VISIBLE_DEVICES=1 python -u run_summarization_ppo.py \
  --ppo_checkpoint ${MODEL_PATH} \
  --output_dir ${OUTPUT_DIR} \
@@ -44,7 +44,7 @@ P2=$!
 wait $P1 $P2
 
 # 任务 3：Flesch Kincaid 得分 50
-OUTPUT_DIR='outputs/3/'
+OUTPUT_DIR='outputs_ppo/3/'
 CUDA_VISIBLE_DEVICES=0 python -u run_summarization_ppo.py \
  --ppo_checkpoint ${MODEL_PATH} \
  --output_dir ${OUTPUT_DIR} \
@@ -60,7 +60,7 @@ CUDA_VISIBLE_DEVICES=0 python -u run_summarization_ppo.py \
 P3=$!
 
 # 任务 4：Flesch Kincaid 得分 30
-OUTPUT_DIR='outputs/4/'
+OUTPUT_DIR='outputs_ppo/4/'
 CUDA_VISIBLE_DEVICES=1 python -u run_summarization_ppo.py \
  --ppo_checkpoint ${MODEL_PATH} \
  --output_dir ${OUTPUT_DIR} \
